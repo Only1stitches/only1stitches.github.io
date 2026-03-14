@@ -1,4 +1,5 @@
-{
-  "app_id": "8c3947f0a1b768c2",
-  "sandbox": true
-}
+// Ensure this is in your app's entry point
+Pi.init({ 
+  version: "2.0", 
+  sandbox: true  // This MUST be true for the sandbox to connect
+});
