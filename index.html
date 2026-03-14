@@ -4,24 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CampusLuv Pay Test</title>
-    <!-- 1. Load the Pi SDK -->
     <script src="https://sdk.minepi.com"></script>
 </head>
 <body style="text-align: center; padding-top: 50px; font-family: sans-serif;">
 
-    <h1>CampusLuv Step 10 Test</h1>
-    <p>Click below to test a Test-Pi transaction.</p>
+    <h1>CampusLuv Step 10</h1>
+    <p id="status">Please wait, connecting to Pi...</p>
     
-    <!-- 2. The Payment Button -->
-    <button id="pay-button" style="padding: 15px 30px; font-size: 18px; background: #673ab7; color: white; border: none; border-radius: 8px;">
+    <button id="pay-button" style="display:none; padding: 15px 30px; font-size: 18px; background: #673ab7; color: white; border: none; border-radius: 8px;">
         Pay 1 Test-Pi
     </button>
 
     <script>
-        // 3. Initialize Pi SDK
         const Pi = window.Pi;
         Pi.init({ version: "2.0", sandbox: true });
 
+        // Step A: Authenticate the user first
+        async function auth() {
+            try {
+                const scopes = ['payments'];
+                const user = await Pi.authenticate(scopes, (payment) => {
+                    console.log("Payment in progress...", payment);
+                });
+                document.getElementById('status').innerText = "Hello " + user.user.username + "! Ready to test.";
+                document.getElementById('pay-button').style.display = "inline-block";
+            } catch (err) {
+                document.getElementById('status').innerText = "Auth failed. Open this in the Pi Browser!";
+            }
+        }
+
+        // Step B: The Payment Function
         document.getElementById('pay-button').onclick = async function() {
             try {
                 const payment = await Pi.createPayment({
@@ -30,19 +42,22 @@
                     metadata: { developer_approved: true }
                 }, {
                     onReadyForServerApproval: (paymentId) => {
-                        console.log("Payment Ready for Approval:", paymentId);
-                        // For Step 10, the SDK sandbox often handles the 'mock' approval automatically
+                        // This tells the Pi Sandbox to auto-approve the test
+                        console.log("Requesting approval for:", paymentId);
                     },
                     onReadyForServerCompletion: (paymentId, txid) => {
-                        alert("Payment Successful! Transaction ID: " + txid);
+                        alert("Success! Transaction ID: " + txid);
                     },
                     onCancel: (paymentId) => { alert("Payment Cancelled"); },
                     onError: (error, paymentId) => { alert("Error: " + error.message); },
                 });
             } catch (err) {
-                alert("Check if you are inside the Pi Browser!");
+                alert("Payment Error: " + err.message);
             }
         };
+
+        // Start Auth on load
+        auth();
     </script>
 </body>
 </html>
