@@ -6,61 +6,46 @@
     <title>CampusLuv</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
-        // Initializing with your specific App ID
         Pi.init({ version: "2.0", sandbox: false });
 
-        async function authenticateAndPay() {
+        async function finishChecklist() {
             try {
-                // Step 1: Login the user to create a session
-                const scopes = ['username', 'payments'];
-                function onIncompletePaymentFound(payment) { /* Handle if needed */ }
+                // Step 1: Login
+                const auth = await Pi.authenticate(['username', 'payments'], (p) => {});
                 
-                const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-                console.log("Logged in as: " + auth.user.username);
-
-                // Step 2: Trigger the payment now that user is verified
-                await Pi.createPayment({
-                    amount: 0.1, 
-                    memo: "Checklist Verification for CampusLuv",
-                    metadata: { type: "checklist_test" },
+                // Step 2: Create Payment
+                // We use a tiny amount (0.01) to make it fast
+                const payment = await Pi.createPayment({
+                    amount: 0.01,
+                    memo: "Final Checklist Step 10",
+                    metadata: { checklist: "true" }
                 }, {
-                    onReadyForServerApproval: (id) => console.log("Approved ID:", id),
-                    onReadyForServerCompletion: (id, txid) => alert("Success! Checklist Stage 10 Completed."),
-                    onCancel: (id) => console.log("Payment Cancelled"),
-                    onError: (err) => alert("Wallet Error: " + err.message)
+                    onReadyForServerApproval: (paymentId) => {
+                        // This tells the Pi Network the app 'approves' the payment request
+                        console.log("App approved payment:", paymentId);
+                    },
+                    onReadyForServerCompletion: (paymentId, txid) => {
+                        alert("Checklist Stage 10 Success! TXID: " + txid);
+                    },
+                    onCancel: (paymentId) => { console.log("Cancelled"); },
+                    onError: (error) => { alert("Error: " + error.message); }
                 });
             } catch (err) {
-                alert("Auth Error: Please open this in the Pi Browser.");
+                alert("Please ensure you are using the Pi Browser.");
             }
         }
     </script>
     <style>
-        body { 
-            background: #002d5b; 
-            color: white; 
-            font-family: sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            text-align: center; 
-        }
-        .logo-text { font-size: 3rem; font-weight: bold; background: linear-gradient(to right, #E68A00, #9b2d60); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
-        .btn { background: #E68A00; color: white; padding: 15px 40px; border: none; border-radius: 30px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+        body { background: #002d5b; color: white; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; }
+        .btn { background: #E68A00; color: white; padding: 18px 35px; border: none; border-radius: 50px; font-weight: bold; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
-    <div class="logo-text">CAMPUSLUV</div>
-    <p>Students' World: Learn • Connect • Earn • Live</p>
+    <h1>CAMPUSLUV</h1>
+    <p>Final Step: Process Transaction</p>
     
-    <button class="btn" onclick="authenticateAndPay()">
-        Complete Stage 10
+    <button class="btn" onclick="finishChecklist()">
+        COMPLETE STAGE 10 NOW
     </button>
-
-    <div style="position:fixed; bottom:20px; font-size:0.7rem; opacity:0.5;">
-        App ID: 8c3947f0a1b768c2 | Subdomain: campusluv4713
-    </div>
 </body>
 </html>
