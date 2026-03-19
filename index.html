@@ -5,38 +5,45 @@
     <script>
         Pi.init({ version: "2.0", sandbox: false });
 
-        // This runs the moment the page opens to find stuck payments
-        async function checkPending() {
+        async function handlePi() {
             try {
                 const auth = await Pi.authenticate(['username', 'payments'], (p) => {});
                 
-                // This is the magic part: it asks the Pi Network for the "stuck" payment
-                const incompletePayment = await Pi.createPayment({
+                await Pi.createPayment({
                     amount: 0.1,
-                    memo: "Completing Stage 10",
+                    memo: "Final Checklist Fix",
                     metadata: { stage: "10" }
                 }, {
-                    onReadyForServerApproval: (id) => fetch('/api/approve', { method: 'POST', body: JSON.stringify({ paymentId: id }), headers: {'Content-Type': 'application/json'} }),
-                    onReadyForServerCompletion: (id, txid) => {
-                        fetch('/api/complete', { method: 'POST', body: JSON.stringify({ paymentId: id, txid: txid }), headers: {'Content-Type': 'application/json'} });
-                        alert("STAGE 10 VERIFIED AND COMPLETED!");
+                    onReadyForServerApproval: async (id) => {
+                        await fetch('/api/approve', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentId: id })
+                        });
                     },
-                    onCancel: (id) => console.log(id),
+                    onReadyForServerCompletion: async (id, txid) => {
+                        await fetch('/api/complete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentId: id, txid: txid })
+                        });
+                        alert("VERIFIED! YOU ARE DONE!");
+                    },
+                    onCancel: (id) => console.log("Cancelled"),
                     onError: (err) => {
-                        if (err.message.includes("pending payment")) {
-                            alert("Found your pending payment! Please refresh and try once more.");
+                        if (err.message.includes("pending")) {
+                            alert("Found it! Click OK, then REFRESH the page and click the button again.");
                         } else {
-                            alert("Note: " + err.message);
+                            alert("Error: " + err.message);
                         }
                     }
                 });
-            } catch (e) { console.log(e.message); }
+            } catch (e) { alert(e.message); }
         }
     </script>
 </head>
-<body onload="checkPending()" style="background:#002d5b; color:white; text-align:center; padding-top:100px; font-family:sans-serif;">
+<body style="background:#002d5b; color:white; text-align:center; padding-top:100px; font-family:sans-serif;">
     <h1>CAMPUSLUV</h1>
-    <p>Handshaking with Pi Network...</p>
-    <button onclick="checkPending()" style="padding:20px; border-radius:50px; background:#E68A00; color:white; border:none; font-weight:bold; cursor:pointer;">MANUAL VERIFY</button>
+    <button onclick="handlePi()" style="padding:20px 40px; border-radius:50px; background:#ffbc00; color:#002d5b; border:none; font-weight:bold; font-size:1.2rem; cursor:pointer;">FINAL VERIFY</button>
 </body>
 </html>
