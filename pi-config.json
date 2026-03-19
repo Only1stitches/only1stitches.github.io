@@ -1,5 +1,4 @@
-// Ensure this is in your app's entry point
-Pi.init({ 
-  version: "2.0", 
-  sandbox: true  // This MUST be true for the sandbox to connect
-});
+{
+  "app_id": "your-app-id-from-developer-portal",
+  "network": "pi_mainnet" 
+}
