@@ -1,32 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusLuv</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
         Pi.init({ version: "2.0", sandbox: false });
-        async function solveStage10() {
+
+        async function completeStage10() {
             try {
                 await Pi.authenticate(['username', 'payments'], (p) => {});
+                
                 await Pi.createPayment({
                     amount: 0.1,
-                    memo: "Final Step",
+                    memo: "Final Checklist Step",
                     metadata: { stage: "10" }
                 }, {
-                    onReadyForServerApproval: (id) => { 
-                        // This is the 'Handshake'. 
-                        // On GitHub, this usually hangs, but try refreshing the wallet NOW.
-                        console.log("Payment ID:", id); 
+                    onReadyForServerApproval: async (paymentId) => {
+                        // This calls your /api/approve.js file automatically
+                        await fetch('/api/approve', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentId })
+                        });
                     },
-                    onReadyForServerCompletion: (id, txid) => alert("Success!"),
-                    onCancel: (id) => console.log("Cancelled"),
-                    onError: (err) => alert("Error: " + err.message)
+                    onReadyForServerCompletion: (paymentId, txid) => {
+                        alert("STAGE 10 VERIFIED! TXID: " + txid);
+                    },
+                    onCancel: (paymentId) => { console.log("Cancelled"); },
+                    onError: (error) => { alert("Error: " + error.message); }
                 });
-            } catch (e) { alert(e.message); }
+            } catch (err) {
+                alert("Please open this in the Pi Browser.");
+            }
         }
     </script>
+    <style>
+        body { background: #002d5b; color: white; font-family: sans-serif; text-align: center; padding-top: 100px; }
+        .btn { background: #E68A00; color: white; padding: 20px 40px; border: none; border-radius: 50px; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
+    </style>
 </head>
-<body style="background:#002d5b; color:white; text-align:center; padding-top:50px;">
+<body>
     <h1>CAMPUSLUV</h1>
-    <button onclick="solveStage10()" style="padding:20px; border-radius:10px;">FINISH CHECKLIST</button>
+    <p>Click below to trigger the wallet passphrase prompt</p>
+    <button class="btn" onclick="completeStage10()">VERIFY NOW</button>
 </body>
 </html>
