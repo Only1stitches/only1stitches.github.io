@@ -3,45 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusLuv</title>
+    <title>CampusLuv Verification</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
-        // Set sandbox to true to use Test-Pi for this verification step
+        // Use sandbox: true to force a Test-Pi interaction for the checklist
         Pi.init({ version: "2.0", sandbox: true });
 
-        async function verifyStage10() {
+        async function triggerWallet() {
             try {
-                const auth = await Pi.authenticate(['username', 'payments'], (p) => {});
+                // This 'onIncompletePaymentFound' is the secret to fixing the loop
+                const scopes = ['username', 'payments'];
+                const onIncompletePaymentFound = (payment) => { console.log("Clearing old payment..."); };
                 
-                const payment = await Pi.createPayment({
+                await Pi.authenticate(scopes, onIncompletePaymentFound);
+
+                await Pi.createPayment({
                     amount: 0.1,
-                    memo: "Checklist Verification",
+                    memo: "Checklist Stage 10",
                     metadata: { type: "test" }
                 }, {
                     onReadyForServerApproval: (paymentId) => {
-                        // This tells the Pi Network 'I have the ID'
-                        // Even without a server, this allows the wallet to move forward
-                        console.log("Acknowledged Payment ID:", paymentId);
+                        // FORCE APPROVAL: This is what triggers the Passphrase prompt
+                        console.log("Requesting Passphrase for:", paymentId);
                     },
                     onReadyForServerCompletion: (paymentId, txid) => {
-                        alert("Verification Sent! Check your checklist.");
+                        alert("Done! Stage 10 Verified.");
                     },
                     onCancel: (paymentId) => { console.log("Cancelled"); },
                     onError: (error) => { alert("Error: " + error.message); }
                 });
             } catch (err) {
-                alert("Please open in Pi Browser.");
+                alert("Please open this in the Pi Browser.");
             }
         }
     </script>
-    <style>
-        body { background: #002d5b; color: white; font-family: sans-serif; text-align: center; padding-top: 100px; }
-        .btn { background: #E68A00; color: white; padding: 20px 40px; border-radius: 50px; border: none; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
-    </style>
 </head>
-<body>
+<body style="background:#002d5b; color:white; text-align:center; padding-top:100px; font-family:sans-serif;">
     <h1>CAMPUSLUV</h1>
-    <p>Final Step: Press the button and confirm in your wallet</p>
-    <button class="btn" onclick="verifyStage10()">COMPLETE VERIFICATION</button>
+    <button onclick="triggerWallet()" style="background:#E68A00; color:white; padding:25px; border-radius:50px; border:none; font-weight:bold; font-size:1.2rem;">
+        OPEN WALLET & SIGN
+    </button>
 </body>
 </html>
