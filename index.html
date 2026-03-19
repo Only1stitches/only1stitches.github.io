@@ -1,38 +1,42 @@
-<script>if(window.location.host.includes("github.io")){window.location.href="https://campusluv4713.pinet.com"}</script>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CampusLuv</title>
-    <!-- This line connects your site to the Pi Network -->
+    <title>CampusLuv Final</title>
     <script src="https://sdk.minepi.com"></script>
     <script>
+        // FIX 1: This stops the "back and forth" by forcing the browser to stay on PiNet
+        if (window.location.href.includes("github.io")) {
+            window.location.href = "https://campusluv4713.pinet.com";
+        }
+
+        // FIX 2: Initialize the Pi Network connection
         Pi.init({ version: "2.0", sandbox: true });
 
         async function makePayment() {
             try {
                 const payment = await Pi.createPayment({
                     amount: 1,
-                    memo: "Test payment for CampusLuv",
-                    metadata: { internalId: "test-001" },
+                    memo: "Final Stage Verification",
+                    metadata: { internalId: "order-101" },
                 }, {
-                    onReadyForServerApproval: (paymentId) => { console.log("Ready!"); },
-                    onReadyForServerCompletion: (paymentId, txid) => { console.log("Done!"); },
-                    onCancel: (paymentId) => { alert("Payment Cancelled"); },
-                    onError: (error, payment) => { console.error(error); },
+                    onReadyForServerApproval: (id) => { console.log("Approved"); },
+                    onReadyForServerCompletion: (id, txid) => { alert("SUCCESS! Stage Passed."); },
+                    onCancel: (id) => { alert("Payment Cancelled"); },
+                    onError: (error) => { alert("Error: " + error.message); },
                 });
             } catch (err) {
-                alert("Please open this in the Pi Browser!");
+                alert("Please open this in the Pi Browser at campusluv4713.pinet.com");
             }
         }
     </script>
 </head>
-<body style="text-align: center; padding-top: 50px; font-family: sans-serif;">
-    <h1>Welcome to CampusLuv</h1>
-    <p>Click below to complete your final stage!</p>
-    
-    <!-- This is your "Pay" button -->
-    <button onclick="makePayment()" style="padding: 20px 40px; background: #673ab7; color: white; border: none; border-radius: 10px; font-size: 18px; cursor: pointer;">
-        Pay 1 Test-Pi
-    </button>
+<body style="text-align: center; padding-top: 50px; font-family: sans-serif; background-color: #f4f4f4;">
+    <div style="background: white; display: inline-block; padding: 40px; border-radius: 20px; shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h1>CampusLuv Final Setup</h1>
+        <p>Click the button below to finish the final stage.</p>
+        <button onclick="makePayment()" style="padding: 20px 40px; background: #673ab7; color: white; border: none; border-radius: 10px; font-size: 20px; cursor: pointer; font-weight: bold;">
+            PAY 1 TEST-PI
+        </button>
+    </div>
 </body>
 </html>
