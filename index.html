@@ -4,53 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CampusLuv - Students' World</title>
-    
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
-        // Initializing the SDK. 
-        // Note: Using sandbox: false because you are moving toward Mainnet/Production.
         Pi.init({ version: "2.0", sandbox: false });
+
+        async function createPayment() {
+            try {
+                const payment = await Pi.createPayment({
+                    amount: 1, 
+                    memo: "Testing CampusLuv Integration",
+                    metadata: { type: "test_payment" },
+                }, {
+                    onReadyForServerApproval: (paymentId) => {
+                        console.log("Payment Ready for Approval:", paymentId);
+                        // In a real app, you'd send this to your backend.
+                        // For the checklist, the Pi server just needs to see the request triggered.
+                    },
+                    onReadyForServerCompletion: (paymentId, txid) => {
+                        console.log("Payment Ready for Completion:", paymentId);
+                    },
+                    onCancel: (paymentId) => { console.log("Payment Cancelled"); },
+                    onError: (error, payment) => { console.error("Payment Error", error); },
+                });
+            } catch (err) {
+                alert("To complete the checklist, please ensure you are logged into your Pi Wallet.");
+            }
+        }
     </script>
 
     <style>
-        /* Modern UI Styling for CampusLuv */
         body {
-            background: radial-gradient(circle, #0056b3, #002d5b); /* Deep Blue Background */
+            background: radial-gradient(circle, #0056b3, #002d5b);
             color: white;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
+            font-family: sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            margin: 0;
             text-align: center;
         }
-
-        .container {
-            padding: 20px;
-            max-width: 400px;
-        }
-
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            /* Using a gradient for the text to match your logo colors */
-            background: linear-gradient(to right, #E68A00, #9b2d60);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p {
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            opacity: 0.9;
-        }
-
         .btn-launch {
             background: linear-gradient(45deg, #E68A00, #FFB347);
             color: white;
@@ -61,19 +55,6 @@
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
-            text-decoration: none;
-        }
-
-        .btn-launch:active {
-            transform: scale(0.95);
-        }
-
-        .footer {
-            position: absolute;
-            bottom: 20px;
-            font-size: 0.8rem;
-            opacity: 0.6;
         }
     </style>
 </head>
@@ -83,12 +64,12 @@
         <h1>CAMPUSLUV</h1>
         <p>Students' World: Learn • Connect • Earn • Live</p>
         
-        <button class="btn-launch" onclick="alert('Welcome to CampusLuv!')">
-            Enter Campus
+        <button class="btn-launch" onclick="createPayment()">
+            Test Pi Payment
         </button>
     </div>
 
-    <div class="footer">
+    <div class="footer" style="position:absolute; bottom:20px; font-size:0.8rem; opacity:0.6;">
         Connected to Pi Network Subdomain: campusluv4713
     </div>
 
