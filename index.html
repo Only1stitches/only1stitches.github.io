@@ -8,70 +8,45 @@
     <script>
         Pi.init({ version: "2.0", sandbox: false });
 
-        async function createPayment() {
+        async function startChecklistProcess() {
             try {
+                // Step 1: Login the user (This connects the Wallet)
+                const scopes = ['username', 'payments'];
+                function onIncompletePaymentFound(payment) { /* Handle incomplete payments */ }
+                
+                const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                console.log(`Hello ${auth.user.username}`);
+
+                // Step 2: Now that logged in, trigger the payment
                 const payment = await Pi.createPayment({
-                    amount: 1, 
-                    memo: "Testing CampusLuv Integration",
+                    amount: 0.1, 
+                    memo: "Checklist Test for CampusLuv",
                     metadata: { type: "test_payment" },
                 }, {
-                    onReadyForServerApproval: (paymentId) => {
-                        console.log("Payment Ready for Approval:", paymentId);
-                        // In a real app, you'd send this to your backend.
-                        // For the checklist, the Pi server just needs to see the request triggered.
-                    },
-                    onReadyForServerCompletion: (paymentId, txid) => {
-                        console.log("Payment Ready for Completion:", paymentId);
-                    },
-                    onCancel: (paymentId) => { console.log("Payment Cancelled"); },
-                    onError: (error, payment) => { console.error("Payment Error", error); },
+                    onReadyForServerApproval: (paymentId) => { console.log("Approved:", paymentId); },
+                    onReadyForServerCompletion: (paymentId, txid) => { alert("Checklist Payment Successful!"); },
+                    onCancel: (paymentId) => { console.log("Cancelled"); },
+                    onError: (error, payment) => { console.error("Error", error); },
                 });
             } catch (err) {
-                alert("To complete the checklist, please ensure you are logged into your Pi Wallet.");
+                console.error(err);
+                alert("Please open this inside the Pi Browser and ensure you are logged in.");
             }
         }
     </script>
-
     <style>
-        body {
-            background: radial-gradient(circle, #0056b3, #002d5b);
-            color: white;
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
-        .btn-launch {
-            background: linear-gradient(45deg, #E68A00, #FFB347);
-            color: white;
-            padding: 15px 40px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
+        body { background: radial-gradient(circle, #0056b3, #002d5b); color: white; font-family: sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; text-align: center; }
+        .btn-launch { background: linear-gradient(45deg, #E68A00, #FFB347); color: white; padding: 15px 40px; border: none; border-radius: 50px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <h1>CAMPUSLUV</h1>
-        <p>Students' World: Learn • Connect • Earn • Live</p>
-        
-        <button class="btn-launch" onclick="createPayment()">
-            Test Pi Payment
-        </button>
+    <h1>CAMPUSLUV</h1>
+    <p>Students' World: Learn • Connect • Earn • Live</p>
+    <button class="btn-launch" onclick="startChecklistProcess()">
+        Complete Checklist Payment
+    </button>
+    <div style="position:absolute; bottom:20px; font-size:0.8rem; opacity:0.6;">
+        Connected to: campusluv4713.pinet.com
     </div>
-
-    <div class="footer" style="position:absolute; bottom:20px; font-size:0.8rem; opacity:0.6;">
-        Connected to Pi Network Subdomain: campusluv4713
-    </div>
-
 </body>
 </html>
