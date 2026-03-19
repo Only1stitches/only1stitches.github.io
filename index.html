@@ -1,94 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusLuv Verification</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
         Pi.init({ version: "2.0", sandbox: false });
-
-        async function verifyStage10() {
+        async function runFinalVerify() {
             try {
-                // 1. Authenticate the user
-                const auth = await Pi.authenticate(['username', 'payments'], (p) => {});
-                console.log("Authenticated as: " + auth.user.username);
-
-                // 2. Start the Payment
+                await Pi.authenticate(['username', 'payments'], (p) => {});
                 await Pi.createPayment({
                     amount: 0.1,
-                    memo: "Final Stage 10 Verification",
+                    memo: "Stage 10 Verification",
                     metadata: { stage: "10" }
                 }, {
-                    onReadyForServerApproval: async (paymentId) => {
-                        console.log("Step 1: Approving...");
-                        await fetch('/api/approve', {
+                    onReadyForServerApproval: (paymentId) => {
+                        fetch('/api/approve', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId })
                         });
                     },
-                    onReadyForServerCompletion: async (paymentId, txid) => {
-                        console.log("Step 2: Completing...");
-                        await fetch('/api/complete', {
+                    onReadyForServerCompletion: (paymentId, txid) => {
+                        fetch('/api/complete', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId, txid })
                         });
-                        alert("STAGE 10 COMPLETE! YOU ARE VERIFIED.");
-                        window.location.reload(); // Refresh to show success
+                        alert("SUCCESS: STAGE 10 VERIFIED!");
                     },
-                    onCancel: (paymentId) => {
-                        alert("Payment cancelled.");
-                    },
-                    onError: (error, payment) => {
-                        console.error(error);
-                        alert("Note: " + error.message);
-                    }
+                    onCancel: (id) => console.log("Cancelled"),
+                    onError: (err) => alert("Note: " + err.message)
                 });
-            } catch (err) {
-                alert("Please open this link inside the Pi Browser.");
-            }
+            } catch (e) { alert(e.message); }
         }
     </script>
-    <style>
-        body { 
-            background: #002d5b; 
-            color: white; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            text-align: center; 
-            padding: 50px 20px; 
-        }
-        .container {
-            max-width: 400px;
-            margin: auto;
-            background: rgba(255,255,255,0.1);
-            padding: 30px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        h1 { color: #ffbc00; margin-bottom: 10px; }
-        p { margin-bottom: 30px; opacity: 0.8; }
-        .btn { 
-            background: #E68A00; 
-            color: white; 
-            padding: 18px 30px; 
-            border: none; 
-            border-radius: 50px; 
-            font-weight: bold; 
-            font-size: 1.1rem; 
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
-        }
-        .btn:active { transform: scale(0.95); }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <h1>CAMPUSLUV</h1>
-        <p>Final Step: Click below to sign the Test-Pi transaction and finish your checklist.</p>
-        <button class="btn" onclick="verifyStage10()">COMPLETE VERIFICATION</button>
-    </div>
+<body style="background:#002d5b; color:white; text-align:center; padding-top:100px; font-family:sans-serif;">
+    <h1>CAMPUSLUV</h1>
+    <p>Waiting for network reset...</p>
+    <button onclick="runFinalVerify()" style="padding:20px; border-radius:50px; background:#E68A00; color:white; border:none; font-weight:bold;">FINISH CONFIRMATION</button>
 </body>
 </html>
