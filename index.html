@@ -4,31 +4,30 @@
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <script>
         Pi.init({ version: "2.0", sandbox: false });
-        async function runFinalVerify() {
+
+        async function handlePending() {
             try {
-                await Pi.authenticate(['username', 'payments'], (p) => {});
+                // This asks Pi for any payments that are stuck
+                await Pi.authenticate(['username', 'payments'], async (p) => {
+                    alert("Checking for stuck payments...");
+                });
+                
+                // This triggers the SDK to find the "Pending" one from your screenshot
                 await Pi.createPayment({
                     amount: 0.1,
-                    memo: "Stage 10 Verification",
+                    memo: "Clearing Stuck Payment",
                     metadata: { stage: "10" }
                 }, {
-                    onReadyForServerApproval: (paymentId) => {
-                        fetch('/api/approve', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId })
-                        });
+                    onReadyForServerApproval: (id) => fetch('/api/approve', { method: 'POST', body: JSON.stringify({ paymentId: id }), headers: {'Content-Type': 'application/json'} }),
+                    onReadyForServerCompletion: (id, txid) => {
+                        fetch('/api/complete', { method: 'POST', body: JSON.stringify({ paymentId: id, txid: txid }), headers: {'Content-Type': 'application/json'} });
+                        alert("STUCK PAYMENT CLEARED!");
                     },
-                    onReadyForServerCompletion: (paymentId, txid) => {
-                        fetch('/api/complete', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId, txid })
-                        });
-                        alert("SUCCESS: STAGE 10 VERIFIED!");
-                    },
-                    onCancel: (id) => console.log("Cancelled"),
-                    onError: (err) => alert("Note: " + err.message)
+                    onCancel: (id) => console.log(id),
+                    onError: (err) => {
+                        // If it says "Pending payment exists", the SDK usually returns the ID
+                        alert("Error during reset: " + err.message);
+                    }
                 });
             } catch (e) { alert(e.message); }
         }
@@ -36,7 +35,7 @@
 </head>
 <body style="background:#002d5b; color:white; text-align:center; padding-top:100px; font-family:sans-serif;">
     <h1>CAMPUSLUV</h1>
-    <p>Waiting for network reset...</p>
-    <button onclick="runFinalVerify()" style="padding:20px; border-radius:50px; background:#E68A00; color:white; border:none; font-weight:bold;">FINISH CONFIRMATION</button>
+    <p>If you see 'Pending Payment', click below:</p>
+    <button onclick="handlePending()" style="padding:20px; border-radius:50px; background:#E68A00; color:white; border:none; font-weight:bold; cursor:pointer;">FORCE COMPLETE & VERIFY</button>
 </body>
 </html>
