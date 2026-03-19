@@ -1,4 +1,5 @@
 {
-  "app_id": "your-app-id-from-developer-portal",
-  "network": "pi_mainnet" 
+  "app_id": "8c3947f0a1b768c2",
+  "network": "pi_mainnet",
+  "pinet_subdomain": "campusluv4713"
 }
