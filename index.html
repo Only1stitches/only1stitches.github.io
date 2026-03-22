@@ -1,51 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusLuv</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+<body>
+    <h1>Welcome to CampusLuv</h1>
+    <div id="user-info"></div>
+    <button id="login-btn" style="padding: 10px 20px; background: #673ab7; color: white; border: none; border-radius: 5px;">Login with Pi</button>
+
     <script>
+        // Initialize Pi SDK
+        const Pi = window.Pi;
         Pi.init({ version: "2.0", sandbox: false });
 
-        async function handlePi() {
+        // Function to handle payments that got stuck before
+        async function onIncompletePaymentFound(payment) {
+            console.log("Found incomplete payment:", payment.identifier);
+            await fetch('/api/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    paymentId: payment.identifier, 
+                    txid: payment.transaction.txid 
+                })
+            });
+        };
+
+        // Login Function
+        async function auth() {
             try {
-                const auth = await Pi.authenticate(['username', 'payments'], (p) => {});
-                
-                await Pi.createPayment({
-                    amount: 0.1,
-                    memo: "Final Checklist Fix",
-                    metadata: { stage: "10" }
-                }, {
-                    onReadyForServerApproval: async (id) => {
-                        await fetch('/api/approve', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId: id })
-                        });
-                    },
-                    onReadyForServerCompletion: async (id, txid) => {
-                        await fetch('/api/complete', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId: id, txid: txid })
-                        });
-                        alert("VERIFIED! YOU ARE DONE!");
-                    },
-                    onCancel: (id) => console.log("Cancelled"),
-                    onError: (err) => {
-                        if (err.message.includes("pending")) {
-                            alert("Found it! Click OK, then REFRESH the page and click the button again.");
-                        } else {
-                            alert("Error: " + err.message);
-                        }
-                    }
-                });
-            } catch (e) { alert(e.message); }
+                const scopes = ['payments', 'username'];
+                const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                document.getElementById('user-info').innerHTML = `Hi, ${auth.user.username}!`;
+                document.getElementById('login-btn').style.display = 'none';
+                console.log("Authenticated:", auth);
+            } catch (err) {
+                console.error("Auth failed:", err);
+            }
         }
+
+        document.getElementById('login-btn').addEventListener('click', auth);
     </script>
-</head>
-<body style="background:#002d5b; color:white; text-align:center; padding-top:100px; font-family:sans-serif;">
-    <h1>CAMPUSLUV</h1>
-    <button onclick="handlePi()" style="padding:20px 40px; border-radius:50px; background:#ffbc00; color:#002d5b; border:none; font-weight:bold; font-size:1.2rem; cursor:pointer;">FINAL VERIFY</button>
 </body>
 </html>
- 
- 
