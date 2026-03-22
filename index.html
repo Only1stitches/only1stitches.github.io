@@ -6,56 +6,69 @@
     <title>CampusLuv</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f9; }
-        .container { max-width: 400px; margin: auto; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        button { padding: 12px 24px; font-size: 16px; cursor: pointer; border-radius: 8px; border: none; margin-top: 20px; transition: 0.3s; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding-top: 50px; background-color: #f0f2f5; color: #1c1e21; }
+        .container { max-width: 400px; margin: auto; padding: 30px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { color: #673ab7; margin-bottom: 10px; }
+        p { color: #65676b; margin-bottom: 30px; }
+        button { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 10px; border: none; transition: all 0.2s ease; }
         #login-btn { background: #673ab7; color: white; }
         #pay-btn { background: #ff9800; color: white; display: none; }
-        button:active { transform: scale(0.98); }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>CampusLuv</h1>
-        <div id="user-info">Connecting students globally...</div>
+        <p id="status">Connecting students globally...</p>
         
         <button id="login-btn">Login with Pi</button>
-        <button id="pay-btn">Pay 1 Pi</button>
+        <button id="pay-btn">Pay 1 Pi to Start</button>
     </div>
 
     <script>
         const Pi = window.Pi;
         Pi.init({ version: "2.0", sandbox: false });
 
-        // THE FIX: Automatically clears the "Pending Action" error
+        // STEP 1: THE REPAIR FUNCTION
+        // This runs automatically if the Pi Network finds your old "Pending" payment
         async function onIncompletePaymentFound(payment) {
-            console.log("Clearing stuck payment...");
+            console.log("Stuck payment found. Clearing now...");
+            document.getElementById('status').innerText = "Clearing pending transaction...";
+            
             await fetch('/api/complete', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction.txid })
+                body: JSON.stringify({ 
+                    paymentId: payment.identifier, 
+                    txid: payment.transaction.txid 
+                })
             });
+            
+            document.getElementById('status').innerText = "Pending payment cleared! Please refresh.";
         };
 
-        // Authenticate User
+        // STEP 2: LOGIN LOGIC
         async function auth() {
             try {
+                // We pass the "Repair Function" into the authenticate call here
                 const auth = await Pi.authenticate(['payments', 'username'], onIncompletePaymentFound);
-                document.getElementById('user-info').innerHTML = `<h3>Welcome, ${auth.user.username}!</h3>`;
+                document.getElementById('status').innerHTML = `Welcome, <strong>${auth.user.username}</strong>!`;
                 document.getElementById('login-btn').style.display = 'none';
-                document.getElementById('pay-btn').style.display = 'inline-block';
+                document.getElementById('pay-btn').style.display = 'block';
             } catch (err) {
                 console.error("Auth failed:", err);
+                document.getElementById('status').innerText = "Login failed. Try again in Pi Browser.";
             }
         }
 
-        // Trigger Payment Wallet
+        // STEP 3: NEW PAYMENT LOGIC
         async function createPayment() {
             try {
                 const paymentData = {
                     amount: 1.0,
-                    memo: "Test Payment for CampusLuv",
-                    metadata: { type: "test_payment" }
+                    memo: "CampusLuv Premium Subscription",
+                    metadata: { type: "subscription_v1" }
                 };
 
                 const callbacks = {
@@ -73,13 +86,13 @@
                             body: JSON.stringify({ paymentId, txid })
                         });
                     },
-                    onCancel: (paymentId) => console.log("User cancelled"),
-                    onError: (error) => console.error("Payment error:", error)
+                    onCancel: (paymentId) => { console.log("Cancelled"); },
+                    onError: (error) => { console.error("Payment error:", error); }
                 };
 
                 await Pi.createPayment(paymentData, callbacks);
             } catch (err) {
-                console.error("Payment trigger failed:", err);
+                console.error("Payment failed:", err);
             }
         }
 
