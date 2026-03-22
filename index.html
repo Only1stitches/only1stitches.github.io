@@ -20,7 +20,6 @@
     <div class="container">
         <h1>CampusLuv</h1>
         <p id="status">Connecting students globally...</p>
-        
         <button id="login-btn">Login with Pi</button>
         <button id="pay-btn">Pay 1 Pi to Start</button>
     </div>
@@ -29,32 +28,13 @@
         const Pi = window.Pi;
         Pi.init({ version: "2.0", sandbox: false });
 
-        // THE DEEP RESET FIX
         async function onIncompletePaymentFound(payment) {
-            console.log("Stuck payment found. Clearing now...");
-            document.getElementById('status').innerText = "Clearing pending transaction...";
-            
-            try {
-                const response = await fetch('/api/complete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        paymentId: payment.identifier, 
-                        txid: payment.transaction.txid 
-                    })
-                });
-
-                if (response.ok) {
-                    document.getElementById('status').innerText = "Success! Resetting app...";
-                    // Force a hard reload after 2 seconds to clear the ghost popup
-                    setTimeout(() => {
-                        window.location.reload(true);
-                    }, 2000); 
-                }
-            } catch (err) {
-                console.error("Cleanup failed:", err);
-                document.getElementById('status').innerText = "Cleanup failed. Check Vercel logs.";
-            }
+            await fetch('/api/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction.txid })
+            });
+            window.location.reload(true);
         };
 
         async function auth() {
@@ -64,7 +44,6 @@
                 document.getElementById('login-btn').style.display = 'none';
                 document.getElementById('pay-btn').style.display = 'block';
             } catch (err) {
-                console.error("Auth failed:", err);
                 document.getElementById('status').innerText = "Login failed. Re-open Pi Browser.";
             }
         }
@@ -76,7 +55,6 @@
                     memo: "CampusLuv Subscription",
                     metadata: { type: "subscription" }
                 };
-
                 const callbacks = {
                     onReadyForServerApproval: (paymentId) => {
                         fetch('/api/approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId }) });
@@ -87,7 +65,6 @@
                     onCancel: (paymentId) => { console.log("Cancelled"); },
                     onError: (error) => { console.error("Payment error:", error); }
                 };
-
                 await Pi.createPayment(paymentData, callbacks);
             } catch (err) {
                 console.error("Payment failed:", err);
