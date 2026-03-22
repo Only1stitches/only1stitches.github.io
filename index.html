@@ -5,78 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CampusLuv</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f0f2f5; }
-        .container { max-width: 400px; margin: auto; padding: 30px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        button { width: 100%; padding: 15px; margin-top: 20px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 10px; border: none; }
-        #login-btn { background: #673ab7; color: white; }
-        #pay-btn { background: #ff9800; color: white; display: none; }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>CampusLuv</h1>
-        <p id="status">Connecting to Pi Network...</p>
-        <button id="login-btn">Login with Pi</button>
-        <button id="pay-btn">Pay 1 Pi to Start</button>
-    </div>
+    <h1>Welcome to CampusLuv</h1>
+    <button id="pay-button">Pay with Pi</button>
 
     <script>
         const Pi = window.Pi;
         Pi.init({ version: "2.0", sandbox: false });
 
-        async function onIncompletePaymentFound(payment) {
-            try {
-                await fetch('/api/complete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        paymentId: payment.identifier, 
-                        txid: payment.transaction.txid 
-                    })
-                });
-                window.location.reload(true);
-            } catch (e) { console.log("Cleaning up stuck payment..."); }
-        };
-
         async function auth() {
             try {
-                const auth = await Pi.authenticate(['payments', 'username'], onIncompletePaymentFound);
-                document.getElementById('status').innerHTML = "Welcome, <b>" + auth.user.username + "</b>!";
-                document.getElementById('login-btn').style.display = 'none';
-                document.getElementById('pay-btn').style.display = 'block';
+                const scopes = ['payments', 'username'];
+                // This function clears the "Pending Payment" error on login
+                function onIncompletePaymentFound(payment) {
+                    console.log("Found incomplete payment:", payment.identifier);
+                    return fetch('/api/complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction.txid })
+                    });
+                };
+
+                const user = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                console.log(`Hello ${user.user.username}`);
             } catch (err) {
-                document.getElementById('status').innerText = "Login failed. Please refresh.";
+                console.error(err);
             }
         }
 
-        async function createPayment() {
-            try {
-                const paymentData = { amount: 1.0, memo: "CampusLuv", metadata: { type: "sub" } };
-                const callbacks = {
-                    onReadyForServerApproval: (id) => {
-                        fetch('/api/approve', { 
-                            method: 'POST', 
-                            headers: {'Content-Type': 'application/json'}, 
-                            body: JSON.stringify({ paymentId: id }) 
-                        });
-                    },
-                    onReadyForServerCompletion: (id, txid) => {
-                        fetch('/api/complete', { 
-                            method: 'POST', 
-                            headers: {'Content-Type': 'application/json'}, 
-                            body: JSON.stringify({ paymentId: id, txid: txid }) 
-                        });
-                    },
-                    onCancel: (id) => { console.log("Cancelled"); },
-                    onError: (error) => { alert("Error: " + error.message); }
-                };
-                await Pi.createPayment(paymentData, callbacks);
-            } catch (err) { alert(err.message); }
-        }
+        auth();
 
-        document.getElementById('login-btn').addEventListener('click', auth);
-        document.getElementById('pay-btn').addEventListener('click', createPayment);
+        document.getElementById('pay-button').onclick = function() {
+            Pi.createPayment({
+                amount: 1, // Set your price
+                memo: "CampusLuv Premium", 
+                metadata: { internal_id: "user_123" }
+            }, {
+                onReadyForServerApproval: function(paymentId) {
+                    return fetch('/api/approve', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paymentId: paymentId })
+                    });
+                },
+                onReadyForServerCompletion: function(paymentId, txid) {
+                    return fetch('/api/complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paymentId: paymentId, txid: txid })
+                    });
+                },
+                onCancel: function(paymentId) { console.log("Cancelled", paymentId); },
+                onError: function(error, payment) { console.error("Error", error); }
+            });
+        };
     </script>
 </body>
 </html>
