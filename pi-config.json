@@ -1,4 +1,7 @@
 {
-  "appId": "8c3947f0a1b768c2",
-  "subdomain": "campusluvy6112"
+  "name": "campusluv",
+  "version": "1.0.0",
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
 }
