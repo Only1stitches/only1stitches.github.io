@@ -1,7 +1,12 @@
 {
-  "name": "campusluv-fix",
+  "name": "campusluv",
   "version": "1.0.0",
+  "description": "Pi Network App",
+  "main": "index.html",
   "dependencies": {
-    "node-fetch": "^2.6.7"
+    "@vercel/node": "^3.0.0"
+  },
+  "scripts": {
+    "start": "node api/approve.js"
   }
 }
