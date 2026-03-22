@@ -19,7 +19,7 @@
 <body>
     <div class="container">
         <h1>CampusLuv</h1>
-        <p id="status">Connecting students globally...</p>
+        <p id="status">Connecting to Pi Network...</p>
         <button id="login-btn">Login with Pi</button>
         <button id="pay-btn">Pay 1 Pi to Start</button>
     </div>
@@ -29,6 +29,7 @@
         Pi.init({ version: "2.0", sandbox: false });
 
         async function onIncompletePaymentFound(payment) {
+            // This function automatically tells the Pi Network to finish the old payment
             try {
                 await fetch('/api/complete', {
                     method: 'POST',
@@ -37,7 +38,7 @@
                 });
                 window.location.reload(true);
             } catch (e) {
-                console.log("Cleanup background task active.");
+                console.log("Stuck payment found; cleaning up...");
             }
         };
 
@@ -48,7 +49,7 @@
                 document.getElementById('login-btn').style.display = 'none';
                 document.getElementById('pay-btn').style.display = 'block';
             } catch (err) {
-                document.getElementById('status').innerText = "Login failed. Please refresh the page.";
+                document.getElementById('status').innerText = "Login failed. Please refresh.";
             }
         }
 
@@ -58,7 +59,7 @@
                     amount: 1.0,
                     memo: "CampusLuv Subscription",
                     metadata: { type: "subscription" }
-                }
+                };
                 const callbacks = {
                     onReadyForServerApproval: (paymentId) => {
                         fetch('/api/approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId }) });
@@ -66,12 +67,12 @@
                     onReadyForServerCompletion: (paymentId, txid) => {
                         fetch('/api/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId, txid }) });
                     },
-                    onCancel: (paymentId) => { console.log("User cancelled payment."); },
-                    onError: (error) => { console.error("Payment error occurred.", error); }
+                    onCancel: (paymentId) => { console.log("Cancelled"); },
+                    onError: (error) => { console.error("Error", error); }
                 };
                 await Pi.createPayment(paymentData, callbacks);
             } catch (err) {
-                console.error("Critical payment failure.", err);
+                console.error("Payment failed", err);
             }
         }
 
