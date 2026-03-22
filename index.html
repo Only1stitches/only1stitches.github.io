@@ -30,20 +30,23 @@
                 await fetch('/api/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction.txid })
+                    body: JSON.stringify({ 
+                        paymentId: payment.identifier, 
+                        txid: payment.transaction.txid 
+                    })
                 });
-            } catch (e) { console.log("Cleaning up..."); }
+                window.location.reload(true);
+            } catch (e) { console.log("Cleaning up stuck payment..."); }
         };
 
         async function auth() {
             try {
                 const auth = await Pi.authenticate(['payments', 'username'], onIncompletePaymentFound);
-                // SUCCESS: Update UI without refreshing the page
                 document.getElementById('status').innerHTML = "Welcome, <b>" + auth.user.username + "</b>!";
                 document.getElementById('login-btn').style.display = 'none';
                 document.getElementById('pay-btn').style.display = 'block';
             } catch (err) {
-                document.getElementById('status').innerText = "Login failed. Try again.";
+                document.getElementById('status').innerText = "Login failed. Please refresh.";
             }
         }
 
@@ -51,10 +54,22 @@
             try {
                 const paymentData = { amount: 1.0, memo: "CampusLuv", metadata: { type: "sub" } };
                 const callbacks = {
-                    onReadyForServerApproval: (id) => fetch('/api/approve', { method: 'POST', body: JSON.stringify({ paymentId: id }) }),
-                    onReadyForServerCompletion: (id, txid) => fetch('/api/complete', { method: 'POST', body: JSON.stringify({ paymentId: id, txid }) }),
-                    onCancel: (id) => console.log("Cancelled"),
-                    onError: (error) => alert("Payment Error: " + error.message)
+                    onReadyForServerApproval: (id) => {
+                        fetch('/api/approve', { 
+                            method: 'POST', 
+                            headers: {'Content-Type': 'application/json'}, 
+                            body: JSON.stringify({ paymentId: id }) 
+                        });
+                    },
+                    onReadyForServerCompletion: (id, txid) => {
+                        fetch('/api/complete', { 
+                            method: 'POST', 
+                            headers: {'Content-Type': 'application/json'}, 
+                            body: JSON.stringify({ paymentId: id, txid: txid }) 
+                        });
+                    },
+                    onCancel: (id) => { console.log("Cancelled"); },
+                    onError: (error) => { alert("Error: " + error.message); }
                 };
                 await Pi.createPayment(paymentData, callbacks);
             } catch (err) { alert(err.message); }
