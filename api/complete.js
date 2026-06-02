@@ -1,18 +1,23 @@
-const axios = require('axios');
-
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-    const { paymentId, txid } = req.body;
-    const PI_API_KEY = process.env.PI_API_KEY;
-
-    try {
-        await axios.post(`https://api.minepi.com/v2/payments/${paymentId}/complete`, 
-        { txid: txid }, 
-        {
-            headers: { 'Authorization': `Key ${PI_API_KEY}` }
-        });
-        res.status(200).json({ message: "Completed" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
+  const { paymentId, txid } = req.body;
+  
+  try {
+    // Send the final server-to-server confirmation to Pi Network API
+    const response = await fetch(`https://api.minepi.com/v2/payments/${paymentId}/complete`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${process.env.PI_API_KEY || 'YOUR_DEVELOPER_KEY_HERE'}`
+      },
+      body: JSON.stringify({ txid })
+    });
+    
+    const data = await response.json();
+    return res.status(200).json(data);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
 }
