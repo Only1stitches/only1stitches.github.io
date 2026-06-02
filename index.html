@@ -5,61 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CampusLuv</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 15px;
+            background-color: #f0f0f0;
+            border: 1px solid #767676;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:active {
+            background-color: #e0e0e0;
+        }
+    </style>
 </head>
 <body>
+
     <h1>Welcome to CampusLuv</h1>
-    <button id="pay-button">Pay with Pi</button>
+    <button id="pi-pay-button">Pay with Pi</button>
 
     <script>
+        // Initialize Pi SDK
         const Pi = window.Pi;
-        Pi.init({ version: "2.0", sandbox: false });
+        // NOTE: Set sandbox: true for Testnet testing. Set to false when moving to Mainnet.
+        Pi.init({ version: "2.0", sandbox: true }); 
 
-        async function auth() {
-            try {
-                const scopes = ['payments', 'username'];
-                // This function clears the "Pending Payment" error on login
-                function onIncompletePaymentFound(payment) {
-                    console.log("Found incomplete payment:", payment.identifier);
-                    return fetch('/api/complete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId: payment.identifier, txid: payment.transaction.txid })
-                    });
-                };
-
-                const user = await Pi.authenticate(scopes, onIncompletePaymentFound);
-                console.log(`Hello ${user.user.username}`);
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        auth();
-
-        document.getElementById('pay-button').onclick = function() {
+        document.getElementById('pi-pay-button').addEventListener('click', () => {
             Pi.createPayment({
-                amount: 1, // Set your price
-                memo: "CampusLuv Premium", 
-                metadata: { internal_id: "user_123" }
+                amount: 1,
+                memo: "Testing Step 10 Completion",
+                metadata: { orderId: "step-10-test-transaction" },
             }, {
                 onReadyForServerApproval: function(paymentId) {
-                    return fetch('/api/approve', {
+                    // Send the payment ID to your Vercel serverless function for approval
+                    fetch('/api/approve', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId: paymentId })
-                    });
+                        body: JSON.stringify({ paymentId })
+                    })
+                    .then(res => res.json())
+                    .then(data => console.log("Server approved initiation:", data))
+                    .catch(err => console.error("Approval error:", err));
                 },
                 onReadyForServerCompletion: function(paymentId, txid) {
-                    return fetch('/api/complete', {
+                    // Send the final blockchain transaction ID to your backend to finalize
+                    fetch('/api/complete', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId: paymentId, txid: txid })
-                    });
+                        body: JSON.stringify({ paymentId, txid })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        alert("Transaction complete! You can now check your Pi Developer Checklist.");
+                    })
+                    .catch(err => console.error("Completion error:", err));
                 },
-                onCancel: function(paymentId) { console.log("Cancelled", paymentId); },
-                onError: function(error, payment) { console.error("Error", error); }
+                onCancel: function(paymentId) {
+                    console.log("Payment cancelled by user. ID:", paymentId);
+                },
+                onError: function(error, paymentId) {
+                    console.error("Pi SDK Error:", error, "Payment ID:", paymentId);
+                }
             });
-        };
+        });
     </script>
 </body>
 </html>
